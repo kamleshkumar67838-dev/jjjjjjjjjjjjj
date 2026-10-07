@@ -127,16 +127,12 @@ export const CardPhotoCropModal: React.FC<CardPhotoCropModalProps> = ({
     ctx.translate(position.x * scaleFactor, position.y * scaleFactor);
     ctx.scale(zoom * scaleFactor, zoom * scaleFactor);
 
-    // Draw the image centered
-    const imgW = img.naturalWidth || img.width;
-    const imgH = img.naturalHeight || img.height;
+    // Draw the image centered to exactly match the preview container
+    const imgNaturalW = img.naturalWidth || 800;
+    const imgNaturalH = img.naturalHeight || 500;
+    const imgH = CROP_WIDTH * (imgNaturalH / imgNaturalW);
 
-    // Render scaled to fit crop frame initially
-    const fitScale = Math.max(CROP_WIDTH / imgW, CROP_HEIGHT / imgH);
-    const drawW = imgW * fitScale;
-    const drawH = imgH * fitScale;
-
-    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.drawImage(img, -CROP_WIDTH / 2, -imgH / 2, CROP_WIDTH, imgH);
 
     ctx.restore();
 
@@ -300,22 +296,35 @@ export const CardPhotoCropModal: React.FC<CardPhotoCropModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end space-x-3 pt-2 border-t border-slate-800/80">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase tracking-wider cursor-pointer transition"
+              onClick={() => {
+                onCropComplete(imageSrc);
+                onClose();
+              }}
+              className="text-xs text-slate-400 hover:text-white underline cursor-pointer py-1"
             >
-              Cancel
+              Use As-Is (बिना क्रॉप किए लगाएं)
             </button>
-            <button
-              type="button"
-              onClick={handleApplyCrop}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs uppercase tracking-wider flex items-center space-x-2 transition shadow-lg shadow-emerald-950/50 cursor-pointer active:scale-95"
-            >
-              <Check className="w-4 h-4" />
-              <span>Apply &amp; Fit to Card (क्रॉप करके सेट करें)</span>
-            </button>
+
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase tracking-wider cursor-pointer transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyCrop}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5 transition shadow-lg shadow-emerald-950/50 cursor-pointer active:scale-95"
+              >
+                <Check className="w-4 h-4" />
+                <span>Apply Crop (क्रॉप करें)</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

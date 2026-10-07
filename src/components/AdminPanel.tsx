@@ -141,33 +141,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     showToast('✅ QR Code & Payment Settings updated live across the entire website!');
   };
 
-  // 2. Handle Card Photo Upload - Opens interactive crop tool immediately
-  const handleCardPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && editingCard) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setRawCropImage(base64);
-        setIsCropModalOpen(true);
-      };
-      reader.readAsDataURL(file);
-    }
-    if (e.target) e.target.value = '';
-  };
-
-  // Called when user clicks "Apply & Fit to Card" in the cropper
-  const handleCropComplete = (croppedBase64: string) => {
-    if (editingCard) {
-      setEditingCard({
-        ...editingCard,
-        customImageUrl: croppedBase64,
-      });
-      showToast('✅ Card photo cropped & fitted to standard card size!');
-    }
-    setIsCropModalOpen(false);
-  };
-
   // Save or Update Card
   const handleSaveCard = (cardToSave: VirtualCard) => {
     const existingIndex = cards.findIndex((c) => c.id === cardToSave.id);
@@ -181,7 +154,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     onUpdateCards(updated);
     setEditingCard(null);
     setIsAddingNewCard(false);
-    showToast('✅ Card specs & photo updated successfully!');
+    showToast('✅ Card specs & photo saved successfully!');
+  };
+
+  // 2. Handle Card Photo Upload - Opens interactive crop tool immediately
+  const handleCardPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && editingCard) {
+      showToast('📸 Loading photo into cropper...');
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setRawCropImage(base64);
+        setIsCropModalOpen(true);
+      };
+      reader.readAsDataURL(file);
+    }
+    if (e.target) e.target.value = '';
+  };
+
+  // Called when user clicks "Apply Crop" in the cropper
+  const handleCropComplete = (croppedBase64: string) => {
+    if (editingCard) {
+      setEditingCard({
+        ...editingCard,
+        customImageUrl: croppedBase64,
+      });
+      showToast('✅ Photo cropped & attached! Click "Save Card Details" to publish.');
+    }
+    setIsCropModalOpen(false);
   };
 
   // Delete Card
@@ -607,6 +608,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </button>
                       </div>
                     )}
+
+                    {/* Hidden Card Photo File Input */}
+                    <input
+                      ref={cardPhotoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCardPhotoUpload}
+                      className="hidden"
+                    />
                   </div>
 
                   {/* Specs & Pricing Form */}
