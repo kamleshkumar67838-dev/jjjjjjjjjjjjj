@@ -1,0 +1,6 @@
+{
+  "name": "Dark Carding | Premium Digital Virtual Cards Store",
+  "description": "Premium virtual card platform offering Visa, Mastercard, and International cards with instant delivery, Telegram support, and live QR payment system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
