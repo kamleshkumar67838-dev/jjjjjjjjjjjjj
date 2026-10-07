@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, QrCode, Upload, ShieldCheck, Zap, AlertCircle, ArrowRight, ExternalLink } from 'lucide-react';
 import { VirtualCard, PaymentSettings, CustomerOrder } from '../types';
+import { compressImage } from '../utils/imageCompressor';
 
 interface CheckoutModalProps {
   card: VirtualCard | null;
@@ -37,19 +38,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setTimeout(() => setCopiedUpi(false), 2000);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setErrorMessage('Screenshot size must be under 5MB');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        setScreenshotPreview(reader.result as string);
+      try {
+        const compressedBase64 = await compressImage(file, 800, 800, 0.85);
+        setScreenshotPreview(compressedBase64);
         setErrorMessage('');
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Failed to compress proof image', err);
+        setErrorMessage('Failed to read image. Please try again.');
+      }
     }
   };
 

@@ -1,0 +1,166 @@
+{
+  "entities": {
+    "PaymentSettings": {
+      "title": "PaymentSettings",
+      "description": "Live store payment settings including QR Code URL, UPI ID, Payee, and Telegram support",
+      "type": "object",
+      "properties": {
+        "qrCodeUrl": {
+          "type": "string",
+          "description": "Base64 data URL or web URL of the admin payment QR code"
+        },
+        "upiId": {
+          "type": "string",
+          "description": "UPI ID for manual payment copy"
+        },
+        "payeeName": {
+          "type": "string",
+          "description": "Display name of payee"
+        },
+        "instructions": {
+          "type": "string",
+          "description": "Instructions for customer checkout"
+        },
+        "telegramUsername": {
+          "type": "string",
+          "description": "Support Telegram username handle"
+        },
+        "telegramUrl": {
+          "type": "string",
+          "description": "Direct Telegram link"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["qrCodeUrl", "upiId", "payeeName"]
+    },
+    "VirtualCard": {
+      "title": "VirtualCard",
+      "description": "Virtual debit/credit card or voucher available in the store catalog",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Card unique identifier"
+        },
+        "category": {
+          "type": "string",
+          "description": "Card category",
+          "enum": ["visa", "mastercard", "international", "tiktok"]
+        },
+        "categoryLabel": {
+          "type": "string",
+          "description": "Display label for category"
+        },
+        "title": {
+          "type": "string",
+          "description": "Card title"
+        },
+        "cardHolder": {
+          "type": "string",
+          "description": "Card holder name"
+        },
+        "cardNumberMask": {
+          "type": "string",
+          "description": "Masked card number"
+        },
+        "validity": {
+          "type": "string",
+          "description": "Card expiry validity"
+        },
+        "cardLimit": {
+          "type": "string",
+          "description": "Card balance or limit description"
+        },
+        "refundPolicy": {
+          "type": "string",
+          "description": "Refund guarantee description"
+        },
+        "instantRelease": {
+          "type": "string",
+          "description": "SLA release time description"
+        },
+        "price": {
+          "type": "number",
+          "description": "Acquisition price in INR"
+        },
+        "inPool": {
+          "type": "string",
+          "description": "Pool availability count or Unlimited"
+        },
+        "inStock": {
+          "type": "boolean",
+          "description": "Whether the card is currently purchasable"
+        },
+        "customImageUrl": {
+          "type": "string",
+          "description": "Admin uploaded custom photo"
+        }
+      },
+      "required": ["id", "category", "title", "price", "inStock"]
+    },
+    "CustomerOrder": {
+      "title": "CustomerOrder",
+      "description": "Customer order placed with payment proof screenshot",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Order reference code (e.g. DC-10294)"
+        },
+        "cardId": {
+          "type": "string",
+          "description": "Purchased card id"
+        },
+        "cardTitle": {
+          "type": "string",
+          "description": "Purchased card title"
+        },
+        "category": {
+          "type": "string",
+          "description": "Purchased card category"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Paid amount in INR"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected"],
+          "description": "Order approval status"
+        },
+        "paymentProofUrl": {
+          "type": "string",
+          "description": "Base64 slip preview"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Order creation timestamp"
+        }
+      },
+      "required": ["id", "cardTitle", "amount", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/settings/payment": {
+      "schema": {
+        "$ref": "#/entities/PaymentSettings"
+      },
+      "description": "Store live payment settings including QR code and UPI details"
+    },
+    "/cards/{cardId}": {
+      "schema": {
+        "$ref": "#/entities/VirtualCard"
+      },
+      "description": "Collection of all virtual cards and coin items in catalog"
+    },
+    "/orders/{orderId}": {
+      "schema": {
+        "$ref": "#/entities/CustomerOrder"
+      },
+      "description": "Collection of customer orders awaiting approval or approved"
+    }
+  }
+}

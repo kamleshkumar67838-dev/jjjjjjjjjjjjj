@@ -19,11 +19,11 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  Copy,
-  Image as ImageIcon
+  Image as ImageIcon,
 } from 'lucide-react';
 import { VirtualCard, PaymentSettings, CustomerOrder, CardCredentials } from '../types';
 import { DEFAULT_QR_CODE } from '../data/initialData';
+import { compressImage } from '../utils/imageCompressor';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -94,23 +94,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // 1. Handle QR Code File Upload - Instantly syncs to live website!
-  const handleQrFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 1. Handle QR Code File Upload - Instantly compresses and syncs live to the entire website!
+  const handleQrFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 8 * 1024 * 1024) {
-        showToast('Image size must be under 8MB');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setQrCodeUrl(base64);
+      try {
+        showToast('⏳ Optimizing & saving QR Code...');
+        const optimizedBase64 = await compressImage(file, 700, 700, 0.9);
+        setQrCodeUrl(optimizedBase64);
 
         // Immediately update store so any customer checkout shows this new QR code without reload!
         const updated: PaymentSettings = {
           ...paymentSettings,
-          qrCodeUrl: base64,
+          qrCodeUrl: optimizedBase64,
           upiId: upiId.trim() || paymentSettings.upiId,
           payeeName: payeeName.trim() || paymentSettings.payeeName,
           instructions: instructions.trim() || paymentSettings.instructions,
@@ -118,9 +114,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           telegramUrl: telegramUrl.trim() || paymentSettings.telegramUrl,
         };
         onUpdatePaymentSettings(updated);
-        showToast('✅ QR Code uploaded & immediately live on website checkout!');
-      };
-      reader.readAsDataURL(file);
+        showToast('✅ QR Code uploaded & live across the entire website!');
+      } catch (err) {
+        console.error('Failed to process QR image', err);
+        showToast('Failed to process image. Please try again.');
+      }
     }
   };
 
@@ -139,19 +137,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   // 2. Handle Card Photo Upload
-  const handleCardPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCardPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && editingCard) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
+      try {
+        showToast('⏳ Optimizing card photo...');
+        const optimizedBase64 = await compressImage(file, 800, 500, 0.88);
         setEditingCard({
           ...editingCard,
-          customImageUrl: base64,
+          customImageUrl: optimizedBase64,
         });
-        showToast('Card Photo uploaded successfully!');
-      };
-      reader.readAsDataURL(file);
+        showToast('Card Photo uploaded and attached successfully!');
+      } catch (err) {
+        console.error('Failed to process card photo', err);
+        showToast('Failed to process card photo.');
+      }
     }
   };
 

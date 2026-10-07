@@ -10,16 +10,33 @@ import { AdminAuthModal } from './components/AdminAuthModal';
 import { AdminPanel } from './components/AdminPanel';
 import {
   getStoredCards,
-  saveStoredCards,
   getStoredPaymentSettings,
-  saveStoredPaymentSettings,
   getStoredOrders,
-  saveStoredOrders,
   getCustomerOrderIds,
   addCustomerOrderId,
   getAdminPin,
   saveAdminPin,
 } from './utils/storage';
+import {
+  fetchPaymentSettings,
+  updatePaymentSettings,
+  fetchCards,
+  updateCards,
+  fetchOrders,
+  createOrder,
+  updateOrdersList,
+} from './utils/api';
+import {
+  subscribeToPaymentSettings,
+  pushPaymentSettingsToFirebase,
+  subscribeToCards,
+  pushCardsToFirebase,
+  subscribeToOrders,
+  pushOrderToFirebase,
+  updateOrderInFirebase,
+} from './utils/firebaseSync';
+import { testFirestoreConnection } from './firebase';
+import { FakeSalesNotification } from './components/FakeSalesNotification';
 import { VirtualCard, PaymentSettings, CustomerOrder, CardCategory } from './types';
 import { ShieldCheck, Lock, Zap, RefreshCw, Send, CheckCircle2, Sparkles } from 'lucide-react';
 
@@ -45,20 +62,60 @@ export default function App() {
   const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
 
-  // Sync state changes with persistence
+  // Real-time Firebase & Server Synchronization
+  useEffect(() => {
+    // 1. Test connection
+    testFirestoreConnection();
+
+    // 2. Real-time Firebase Firestore Listeners (Zero-delay updates across devices)
+    const unsubPayment = subscribeToPaymentSettings((liveSettings) => {
+      setPaymentSettings(liveSettings);
+    });
+
+    const unsubCards = subscribeToCards((liveCards) => {
+      setCards(liveCards);
+    });
+
+    const unsubOrders = subscribeToOrders((liveOrders) => {
+      setOrders(liveOrders);
+    });
+
+    // 3. Server fallback initial pull
+    fetchPaymentSettings().then((s) => {
+      if (s && s.qrCodeUrl) setPaymentSettings(s);
+    });
+    fetchCards().then((c) => {
+      if (c && c.length > 0) setCards(c);
+    });
+    fetchOrders().then((o) => {
+      if (o) setOrders(o);
+    });
+
+    return () => {
+      unsubPayment();
+      unsubCards();
+      unsubOrders();
+    };
+  }, []);
+
+  // Sync state changes with Firebase & Server
   const handleUpdatePaymentSettings = (newSettings: PaymentSettings) => {
     setPaymentSettings(newSettings);
-    saveStoredPaymentSettings(newSettings);
+    pushPaymentSettingsToFirebase(newSettings);
+    updatePaymentSettings(newSettings);
   };
 
   const handleUpdateCards = (newCards: VirtualCard[]) => {
     setCards(newCards);
-    saveStoredCards(newCards);
+    pushCardsToFirebase(newCards);
+    updateCards(newCards);
   };
 
   const handleUpdateOrders = (newOrders: CustomerOrder[]) => {
     setOrders(newOrders);
-    saveStoredOrders(newOrders);
+    updateOrdersList(newOrders);
+    // Push any changes to Firebase
+    newOrders.forEach((o) => updateOrderInFirebase(o));
   };
 
   const handleUpdateAdminPin = (newPin: string) => {
@@ -84,7 +141,8 @@ export default function App() {
 
     const updated = [newOrder, ...orders];
     setOrders(updated);
-    saveStoredOrders(updated);
+    pushOrderToFirebase(newOrder);
+    createOrder(newOrder);
 
     addCustomerOrderId(orderId);
     setCustomerOrderIds(getCustomerOrderIds());
@@ -201,6 +259,9 @@ export default function App() {
       </div>
 
 
+
+      {/* Live Sales Activity Fake Buying Notifications */}
+      <FakeSalesNotification />
 
       {/* Floating Telegram Support Button matching screenshot Image 1 & 2 */}
       <FloatingTelegramButton
