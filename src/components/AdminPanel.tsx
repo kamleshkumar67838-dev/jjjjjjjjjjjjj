@@ -16,14 +16,15 @@ import {
   Sparkles,
   ExternalLink,
   ShieldCheck,
-  Clock,
+  Image as ImageIcon,
   CheckCircle2,
   XCircle,
-  Image as ImageIcon,
+  Crop,
 } from 'lucide-react';
 import { VirtualCard, PaymentSettings, CustomerOrder, CardCredentials } from '../types';
 import { DEFAULT_QR_CODE } from '../data/initialData';
 import { compressImage } from '../utils/imageCompressor';
+import { CardPhotoCropModal } from './CardPhotoCropModal';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -84,6 +85,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // Pin state
   const [newPin, setNewPin] = useState(adminPin);
 
+  // Card Photo Cropper Modal states
+  const [rawCropImage, setRawCropImage] = useState<string | null>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+
   const qrFileInputRef = useRef<HTMLInputElement>(null);
   const cardPhotoInputRef = useRef<HTMLInputElement>(null);
 
@@ -136,23 +141,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     showToast('✅ QR Code & Payment Settings updated live across the entire website!');
   };
 
-  // 2. Handle Card Photo Upload
-  const handleCardPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 2. Handle Card Photo Upload - Opens interactive crop tool immediately
+  const handleCardPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && editingCard) {
-      try {
-        showToast('⏳ Optimizing card photo...');
-        const optimizedBase64 = await compressImage(file, 800, 500, 0.88);
-        setEditingCard({
-          ...editingCard,
-          customImageUrl: optimizedBase64,
-        });
-        showToast('Card Photo uploaded and attached successfully!');
-      } catch (err) {
-        console.error('Failed to process card photo', err);
-        showToast('Failed to process card photo.');
-      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setRawCropImage(base64);
+        setIsCropModalOpen(true);
+      };
+      reader.readAsDataURL(file);
     }
+    if (e.target) e.target.value = '';
+  };
+
+  // Called when user clicks "Apply & Fit to Card" in the cropper
+  const handleCropComplete = (croppedBase64: string) => {
+    if (editingCard) {
+      setEditingCard({
+        ...editingCard,
+        customImageUrl: croppedBase64,
+      });
+      showToast('✅ Card photo cropped & fitted to standard card size!');
+    }
+    setIsCropModalOpen(false);
   };
 
   // Save or Update Card
@@ -529,47 +542,71 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     </label>
 
                     {editingCard.customImageUrl ? (
-                      <div className="relative w-full aspect-[1.58/1] rounded-xl overflow-hidden border border-purple-500/50">
-                        <img
-                          src={editingCard.customImageUrl}
-                          alt="Card preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setEditingCard({ ...editingCard, customImageUrl: undefined })}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-red-600/80 text-white hover:bg-red-600 text-xs cursor-pointer"
-                          title="Remove custom photo and use default high-tech card"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      <div className="space-y-2.5">
+                        <div className="relative w-full aspect-[1.58/1] rounded-xl overflow-hidden border-2 border-purple-500/50 shadow-lg">
+                          <img
+                            src={editingCard.customImageUrl}
+                            alt="Card preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/75 backdrop-blur-md text-[10px] text-emerald-400 font-mono font-bold border border-emerald-500/30">
+                            ✓ Standard Card Ratio
+                          </span>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRawCropImage(editingCard.customImageUrl || null);
+                              setIsCropModalOpen(true);
+                            }}
+                            className="flex-1 py-2 px-3 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-md shadow-purple-900/30"
+                          >
+                            <Crop className="w-3.5 h-3.5" />
+                            <span>Crop / Adjust Size (क्रॉप करें)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => cardPhotoInputRef.current?.click()}
+                            className="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center justify-center space-x-1 transition cursor-pointer"
+                            title="Upload and crop new photo"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>New</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setEditingCard({ ...editingCard, customImageUrl: undefined })}
+                            className="py-2 px-2.5 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-300 text-xs cursor-pointer transition"
+                            title="Remove custom photo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ) : (
-                      <div className="w-full aspect-[1.58/1] rounded-xl border border-dashed border-slate-700 bg-slate-900/60 flex flex-col items-center justify-center p-4 text-center">
-                        <ImageIcon className="w-8 h-8 text-slate-500 mb-1" />
-                        <span className="text-xs text-slate-400">No custom photo attached</span>
-                        <span className="text-[10px] text-slate-500">
-                          (Default high-tech chip card mockup will be rendered)
-                        </span>
+                      <div className="space-y-2.5">
+                        <div className="w-full aspect-[1.58/1] rounded-xl border border-dashed border-slate-700 bg-slate-900/60 flex flex-col items-center justify-center p-4 text-center">
+                          <ImageIcon className="w-8 h-8 text-slate-500 mb-1" />
+                          <span className="text-xs text-slate-400">No custom photo attached</span>
+                          <span className="text-[10px] text-slate-500">
+                            (Default chip card skin will be shown)
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => cardPhotoInputRef.current?.click()}
+                          className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center space-x-1.5 transition shadow cursor-pointer"
+                        >
+                          <Crop className="w-3.5 h-3.5" />
+                          <span>Upload &amp; Crop Photo (फोटो जोड़ें और क्रॉप करें)</span>
+                        </button>
                       </div>
                     )}
-
-                    <input
-                      ref={cardPhotoInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCardPhotoUpload}
-                      className="hidden"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => cardPhotoInputRef.current?.click()}
-                      className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center justify-center space-x-1.5 transition cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Upload Card Photo (फोटो अपलोड करें)</span>
-                    </button>
                   </div>
 
                   {/* Specs & Pricing Form */}
@@ -1196,6 +1233,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
           </div>
         )}
+
+        {/* 6. Interactive Card Photo Cropper Modal */}
+        <CardPhotoCropModal
+          isOpen={isCropModalOpen}
+          imageSrc={rawCropImage}
+          onClose={() => setIsCropModalOpen(false)}
+          onCropComplete={handleCropComplete}
+        />
       </div>
     </div>
   );
