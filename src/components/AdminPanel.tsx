@@ -24,6 +24,7 @@ import {
 import { VirtualCard, PaymentSettings, CustomerOrder, CardCredentials } from '../types';
 import { DEFAULT_QR_CODE } from '../data/initialData';
 import { compressImage } from '../utils/imageCompressor';
+import { aiSmartFitCardPhoto } from '../utils/aiCardFitter';
 import { CardPhotoCropModal } from './CardPhotoCropModal';
 
 interface AdminPanelProps {
@@ -157,30 +158,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     showToast('✅ Card specs & photo saved successfully!');
   };
 
-  // 2. Handle Card Photo Upload - Opens interactive crop tool immediately
-  const handleCardPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 2. Handle Card Photo Upload - Automatically AI fits to standard card size immediately!
+  const handleCardPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && editingCard) {
-      showToast('📸 Loading photo into cropper...');
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setRawCropImage(base64);
-        setIsCropModalOpen(true);
-      };
-      reader.readAsDataURL(file);
+      try {
+        showToast('✨ AI Auto-Fitting: फोटो को कार्ड साइज़ में प्रोसेस किया जा रहा है...');
+        // AI Smart Fitter immediately resizes, frames, and optimizes into standard 1.586:1 card ratio!
+        const autoFittedBase64 = await aiSmartFitCardPhoto(file);
+        setEditingCard({
+          ...editingCard,
+          customImageUrl: autoFittedBase64,
+        });
+        setRawCropImage(autoFittedBase64);
+        showToast('✅ फोटो AI द्वारा ऑटोमैटिकली परफेक्ट कार्ड साइज़ में सेट हो गई!');
+      } catch (err) {
+        console.error('Failed to auto-fit photo', err);
+        showToast('Error processing image. Please try another photo.');
+      }
     }
     if (e.target) e.target.value = '';
   };
 
-  // Called when user clicks "Apply Crop" in the cropper
+  // Called when user clicks "Apply Crop" in the manual cropper
   const handleCropComplete = (croppedBase64: string) => {
     if (editingCard) {
       setEditingCard({
         ...editingCard,
         customImageUrl: croppedBase64,
       });
-      showToast('✅ Photo cropped & attached! Click "Save Card Details" to publish.');
+      showToast('✅ Photo adjusted! Click "Save Card Details" to publish.');
     }
     setIsCropModalOpen(false);
   };
@@ -550,32 +557,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             alt="Card preview"
                             className="w-full h-full object-cover"
                           />
-                          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/75 backdrop-blur-md text-[10px] text-emerald-400 font-mono font-bold border border-emerald-500/30">
-                            ✓ Standard Card Ratio
+                          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md text-[10px] text-emerald-400 font-mono font-bold border border-emerald-500/40 flex items-center space-x-1">
+                            <Sparkles className="w-2.5 h-2.5 text-yellow-300" />
+                            <span>AI Auto-Fitted (1.58:1 Ratio)</span>
                           </span>
                         </div>
 
                         <div className="flex gap-2">
                           <button
                             type="button"
-                            onClick={() => {
-                              setRawCropImage(editingCard.customImageUrl || null);
-                              setIsCropModalOpen(true);
-                            }}
+                            onClick={() => cardPhotoInputRef.current?.click()}
                             className="flex-1 py-2 px-3 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-md shadow-purple-900/30"
                           >
-                            <Crop className="w-3.5 h-3.5" />
-                            <span>Crop / Adjust Size (क्रॉप करें)</span>
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Change Photo (नई फोटो चुनें)</span>
                           </button>
 
                           <button
                             type="button"
-                            onClick={() => cardPhotoInputRef.current?.click()}
-                            className="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center justify-center space-x-1 transition cursor-pointer"
-                            title="Upload and crop new photo"
+                            onClick={() => {
+                              setRawCropImage(editingCard.customImageUrl || null);
+                              setIsCropModalOpen(true);
+                            }}
+                            className="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center space-x-1 transition cursor-pointer"
+                            title="Fine-tune zoom and position"
                           >
-                            <Upload className="w-3.5 h-3.5" />
-                            <span>New</span>
+                            <Crop className="w-3.5 h-3.5" />
+                            <span>Adjust</span>
                           </button>
 
                           <button
@@ -594,17 +602,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           <ImageIcon className="w-8 h-8 text-slate-500 mb-1" />
                           <span className="text-xs text-slate-400">No custom photo attached</span>
                           <span className="text-[10px] text-slate-500">
-                            (Default chip card skin will be shown)
+                            (कोई भी फोटो अपलोड करें, AI ऑटोमैटिकली कार्ड साइज़ में बना देगा)
                           </span>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => cardPhotoInputRef.current?.click()}
-                          className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center space-x-1.5 transition shadow cursor-pointer"
+                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center justify-center space-x-1.5 transition shadow cursor-pointer"
                         >
-                          <Crop className="w-3.5 h-3.5" />
-                          <span>Upload &amp; Crop Photo (फोटो जोड़ें और क्रॉप करें)</span>
+                          <Sparkles className="w-4 h-4 text-yellow-300" />
+                          <span>Upload Photo (AI ऑटोमैटिक कार्ड साइज़ में सेट करेगा)</span>
                         </button>
                       </div>
                     )}
