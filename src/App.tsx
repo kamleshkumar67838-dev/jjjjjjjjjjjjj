@@ -91,12 +91,53 @@ export default function App() {
       if (o) setOrders(o);
     });
 
+    // 4. Secret URL Route Detector for /admin, #admin, or ?admin
+    const checkAdminUrlRoute = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      const search = window.location.search.toLowerCase();
+
+      if (path === '/admin' || path.startsWith('/admin') || hash === '#admin' || search.includes('admin')) {
+        setIsAdminAuthOpen(true);
+      }
+    };
+
+    checkAdminUrlRoute();
+    window.addEventListener('hashchange', checkAdminUrlRoute);
+    window.addEventListener('popstate', checkAdminUrlRoute);
+
+    // 5. Secret Keyboard Shortcut: Ctrl + Shift + A
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        setIsAdminAuthOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
     return () => {
       unsubPayment();
       unsubCards();
       unsubOrders();
+      window.removeEventListener('hashchange', checkAdminUrlRoute);
+      window.removeEventListener('popstate', checkAdminUrlRoute);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  const handleCloseAdminAuth = () => {
+    setIsAdminAuthOpen(false);
+    if (window.location.pathname === '/admin' || window.location.hash === '#admin') {
+      window.history.replaceState(null, '', '/');
+    }
+  };
+
+  const handleCloseAdminPanel = () => {
+    setIsAdminPanelOpen(false);
+    if (window.location.pathname === '/admin' || window.location.hash === '#admin') {
+      window.history.replaceState(null, '', '/');
+    }
+  };
 
   // Sync state changes with Firebase & Server
   const handleUpdatePaymentSettings = (newSettings: PaymentSettings) => {
@@ -302,7 +343,7 @@ export default function App() {
       {/* 4. Admin Auth Passcode Modal */}
       <AdminAuthModal
         isOpen={isAdminAuthOpen}
-        onClose={() => setIsAdminAuthOpen(false)}
+        onClose={handleCloseAdminAuth}
         onAuthenticated={() => {
           setIsAdminAuthOpen(false);
           setIsAdminPanelOpen(true);
@@ -313,7 +354,7 @@ export default function App() {
       {/* 5. Full Loaded Admin Panel */}
       <AdminPanel
         isOpen={isAdminPanelOpen}
-        onClose={() => setIsAdminPanelOpen(false)}
+        onClose={handleCloseAdminPanel}
         cards={cards}
         paymentSettings={paymentSettings}
         orders={orders}

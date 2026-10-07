@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, ShieldCheck, Send, Settings, Sparkles } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Send, Sparkles } from 'lucide-react';
 import { PaymentSettings } from '../types';
 
 interface HeaderProps {
@@ -7,7 +7,7 @@ interface HeaderProps {
   ordersCount: number;
   onOpenMyOrders: () => void;
   onOpenSupport: () => void;
-  onOpenAdmin: () => void;
+  onOpenAdmin?: () => void;
   onScrollToCards: () => void;
 }
 
@@ -61,16 +61,6 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="w-2 h-2 rounded-full bg-blue-400"></span>
             <Send className="w-3.5 h-3.5 text-blue-300" />
             <span className="tracking-wide">SUPPORT</span>
-          </button>
-
-          {/* ADMIN PANEL Quick Access */}
-          <button
-            onClick={onOpenAdmin}
-            className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-emerald-300 font-semibold transition-all shadow-sm hover:shadow-emerald-500/20 active:scale-95 cursor-pointer"
-            title="Open Admin Panel to manage QR code, cards & orders"
-          >
-            <Settings className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden md:inline tracking-wide">ADMIN</span>
           </button>
         </div>
       </div>

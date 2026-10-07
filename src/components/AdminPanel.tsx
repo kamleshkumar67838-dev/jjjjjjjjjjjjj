@@ -1032,22 +1032,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </button>
             </div>
 
-            {/* Change Admin PIN */}
+            {/* Change Admin Password */}
             <div className="rounded-xl bg-[#0c1228] border border-slate-800 p-5 space-y-4">
               <h5 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Change Admin Passcode</span>
+                <span>Change Admin Password</span>
               </h5>
 
               <div>
                 <label className="text-[11px] font-bold text-slate-400 block mb-1">
-                  New Admin PIN
+                  New Admin Password
                 </label>
                 <input
                   type="password"
                   value={newPin}
                   onChange={(e) => setNewPin(e.target.value)}
-                  placeholder="Enter new PIN"
+                  placeholder="Enter new password"
                   className="w-full max-w-xs px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
                 />
               </div>
@@ -1057,12 +1057,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 onClick={() => {
                   if (newPin.trim()) {
                     onUpdateAdminPin(newPin.trim());
-                    showToast('Admin PIN updated!');
+                    showToast('✅ Admin password updated successfully!');
+                    setNewPin('');
                   }
                 }}
-                className="py-2 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase cursor-pointer"
+                className="py-2 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase cursor-pointer transition shadow"
               >
-                Update PIN
+                Update Password
               </button>
             </div>
           </div>

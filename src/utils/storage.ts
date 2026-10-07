@@ -6,7 +6,7 @@ const STORAGE_KEYS = {
   PAYMENT_SETTINGS: 'dc_payment_settings_v2',
   ORDERS: 'dc_customer_orders_v1',
   CUSTOMER_ORDER_IDS: 'dc_my_order_ids_v1',
-  ADMIN_PIN: 'dc_admin_pin_v1',
+  ADMIN_PIN: 'dc_admin_pin_v2',
 };
 
 export const getStoredCards = (): VirtualCard[] => {
@@ -97,9 +97,11 @@ export const addCustomerOrderId = (orderId: string) => {
 
 export const getAdminPin = (): string => {
   try {
-    return localStorage.getItem(STORAGE_KEYS.ADMIN_PIN) || 'admin123';
+    const pin = localStorage.getItem(STORAGE_KEYS.ADMIN_PIN);
+    if (!pin || pin === 'admin123' || pin === 'admin') return 'kamlesh@90';
+    return pin;
   } catch {
-    return 'admin123';
+    return 'kamlesh@90';
   }
 };
 

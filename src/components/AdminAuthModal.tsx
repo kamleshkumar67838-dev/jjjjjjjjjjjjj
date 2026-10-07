@@ -21,7 +21,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin.trim() === adminPin || pin.trim() === 'admin123' || pin.trim() === 'admin') {
+    if (pin.trim() === adminPin || pin.trim() === 'kamlesh@90') {
       setError(false);
       setPin('');
       onAuthenticated();
@@ -48,7 +48,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
             ADMIN PANEL ACCESS
           </h3>
           <p className="text-xs text-slate-400">
-            Enter admin passcode to manage QR Code, Cards photo, and Orders. (Default: <code className="text-emerald-400 font-mono">admin123</code>)
+            Enter admin password to manage QR Code, Cards photo, and Orders.
           </p>
         </div>
 
@@ -57,7 +57,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
             <input
               type="password"
               autoFocus
-              placeholder="Enter Admin PIN / Password"
+              placeholder="Enter Admin Password"
               value={pin}
               onChange={(e) => {
                 setPin(e.target.value);
@@ -68,7 +68,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
             {error && (
               <p className="text-xs text-red-400 mt-1.5 text-center flex items-center justify-center space-x-1">
                 <ShieldAlert className="w-3.5 h-3.5" />
-                <span>Incorrect PIN! Try default: admin123</span>
+                <span>Incorrect Password! Please enter valid admin password.</span>
               </p>
             )}
           </div>
